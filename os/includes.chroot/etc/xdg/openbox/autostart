@@ -1,0 +1,4 @@
+# FenixOS Live (openbox, profil full): auto-start GUI po wejściu w sesję X.
+# Fenix-boot (unlock D24) jedzie PRZED tym jako usługa systemd (tty), więc
+# tożsamość jest już odhatowana, gdy okno wstaje.
+(sleep 1; /usr/local/bin/fenix-gui) &

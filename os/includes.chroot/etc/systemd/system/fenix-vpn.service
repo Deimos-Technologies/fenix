@@ -1,0 +1,21 @@
+[Unit]
+# fenix-vpn.service — Mullvad WireGuard (D29 profil B) z kill switchem
+# OPT-IN: startuje TYLKO gdy user zapisał numer konta (/run/fenix/vpn.env, RAM).
+# Bez tego pliku usługa schodzi z pola bitwy bez śladu — zero wycieków, zero pytań.
+Description=FenixOS Mullvad VPN (kill switch + tunel fnxwg0; D29B)
+Documentation=man:wg-quick(8)
+After=network-online.target nftables.service
+Wants=network-online.target
+ConditionPathExists=/run/fenix/vpn.env
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/fenix-vpn up
+ExecStop=/usr/local/bin/fenix-vpn down
+Restart=no
+# higiena: usługa nie wypisuje tokena nigdzie (mullvad.py go zeroizuje; config w /run = RAM)
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

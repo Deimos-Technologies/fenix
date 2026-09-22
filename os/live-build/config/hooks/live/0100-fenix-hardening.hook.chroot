@@ -1,0 +1,59 @@
+#!/bin/bash
+# 0100-fenix-hardening.hook.chroot — utwardzenie systemu (iso_plan §B3, boot_security §3.2)
+# Wykonuje sie w chroot obrazu podczas `lb build`.
+set -euo pipefail
+
+# --- uzytkownik fenix: STALE uid/gid 1088 (musi pasowac do nftables.conf!) ---
+groupadd -g 1088 fenix
+useradd -u 1088 -g 1088 -m -s /bin/bash -c "Fenix" fenix
+passwd -l fenix
+passwd -l root
+
+# --- brak sudo na live (privesc surface = zero) ---
+apt-get purge -y sudo || true
+
+# --- amnezja: journald tylko w RAM, bez zapisu na nosnik (iso_plan §B3) ---
+mkdir -p /etc/systemd/journald.conf.d
+printf '[Journal]\nStorage=volatile\nRuntimeMaxUse=32M\nCompress=yes\n' \
+  > /etc/systemd/journald.conf.d/90-fenix-volatile.conf
+
+# --- DNS otwartym tekstem NIE ISTNIEJE w tym systemie (fail-closed) ---
+rm -f /etc/resolv.conf
+ln -s /dev/null /etc/resolv.conf
+
+# --- maskowanie uslug, ktore by gadaly z radiem/modemem poza camo ---
+systemctl mask bluetooth.service || true
+systemctl mask ModemManager.service || true
+systemctl mask avahi-daemon.service || true
+systemctl mask systemd-timesyncd.service || true   # czas: przez camo (M2)
+systemctl mask apt-daily.service apt-daily-upgrade.service || true  # zero wowczas - ISO sie nie updatuje sam
+
+# --- wlaczamy nasza kolejnosc bootu: spoof → firewall → node ---
+systemctl enable nftables.service || true
+systemctl enable fenix-spoof.service || true
+systemctl enable fenix-node.service || true
+systemctl enable fenix-panicd.service || true   # D27: Del+PageUp 2 s
+systemctl enable fenix-boot.service || true    # bariera: kreator/unlock/panika (D24)
+systemctl enable fenix-vpn.service || true     # D29B: Mullvad opt-in (ConditionPathExists=vpn.env)
+
+# --- sysctl hardening + fail-closed IPv6 ---
+cat > /etc/sysctl.d/90-fenix.conf <<'EOF'
+kernel.kptr_restrict=2
+kernel.dmesg_restrict=1
+kernel.unprivileged_bpf_disabled=1
+fs.suid_dumpable=0
+net.ipv4.ip_forward=0
+net.ipv4.conf.all.rp_filter=1
+net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6=1
+EOF
+
+# --- swap/hibernacja OFF (amnezja bezwzgledna) ---
+systemctl mask swap.target || true
+systemctl mask hibernate.target hybrid-sleep.target suspend-then-hibernate.target || true
+
+# --- /tmp i /var/tmp jako tmpfs ---
+cat > /etc/fstab <<'EOF'
+tmpfs /tmp tmpfs defaults,noexec,nosuid,nodev,size=512M 0 0
+tmpfs /var/tmp tmpfs defaults,noexec,nosuid,nodev,size=256M 0 0
+EOF

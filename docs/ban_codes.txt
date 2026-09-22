@@ -1,0 +1,226 @@
+================================================================================
+FENIX / AnonNet — KODEKS BANOW (Ban Codes Registry) v1.0 | 2026-07-19
+================================================================================
+Status: obowiązujący rejestr kodów używanych w BAN_EVT (fnx_spec §9, ToS §8).
+
+ŻELAZNE ZASADY REJESTRU:
+ 1) Kody oceniają WZORCE zachowania (meta), NIGDY treści wiadomości/stron.
+ 2) Każdy kod ma publiczne wyjaśnienie PL/EN (definicje w tym pliku).
+ 3) Werdykt red wymaga konsensusu k-z-n niezależnych raportów (fnx_spec §9).
+    Yellow/orange mogą być jednosygnałowe — i resetują się automatycznie.
+ 4) Fałszywe zgłoszenie w kółko = samo w sobie sygnał (SENTINEL_GAMING).
+ 5) Zmiana/dodanie kodu = nowa wersja tego pliku + publikacja 14 dni wcześniej
+    (ToS §11). Użytkownik zna zasady, na które się zgodził.
+ 6) Poziomy: YELLOW (throttle/obserwacja, auto-reset do 7 dni)
+             ORANGE (read-only/pauzy, 14 dni)
+             RED    (ban + tombstone, konsensus)
+
+Legenda pól: ID | NAZWA — poziom domyślny | CO TO JEST | SYGNAŁY DETEKCJI |
+             REAKCJA AUTOMATYCZNA
+
+--------------------------------------------------------------------------------
+A. PROTOKÓŁ I TRANSPORT (0x10–0x1F) — mechanika mieszkania w sieci
+--------------------------------------------------------------------------------
+0x11 PROTO_FLOOD — RED
+  Zalewanie sieci volumetrycznie (DoS/DDoS wewnątrzwarstwowe).
+  Sygnały: pkts/s powyżej kwantyla globalnego ×10 przez ≥60 s; ruch do wielu celów.
+  Auto: natychmiastowy throttle → konsensus.
+
+0x12 INVALIDTAG_STORM — RED
+  Masowy napływ pakietów z błędnymi podpisami/AEAD (forgerowanie, proby złośliwe).
+  Sygnały: >100 nieprawidłowych tagów/min z jednego połączenia.
+  Auto: odrzucanie bez odpowiedzi + zgłoszenie.
+
+0x13 CAMO_VIOLATION — ORANGE (repeat → RED)
+  Ruch Fenix bez warstwy kamuflażu poza endorsowanym laboratorium.
+  Sygnały: rozpoznawalne sygnatury protokołu na drucie (fingerprint scan z camo).
+  Auto: odcinanie połączenia, instruktaż; recydywa = konsensus.
+
+0x14 FRAME_FUZZ — YELLOW (persist → RED)
+  Ramki poza specyfikacją (złe pola, rozmiary, wersje) w sposób systematyczny.
+  Sygnały: >50 błędnych ramek/h; różne źródła, ten sam klient (entropy match).
+  Auto: drop + backoff.
+
+0x15 REPLAY_ATTACK — RED
+  Odtwarzanie zapisanych wcześniej ramek (cel: wymusić zachowanie systemu).
+  Sygnały: SEQ z przeszłości okna anti-replay; duplikaty ≈ bajt-w-bajt.
+  Auto: twardy rozłącz + zgłoszenie priorytetowe.
+
+0x16 HANDSHAKE_FARM — ORANGE (persist → RED)
+  Tysiące niekończonych handshake (zajmowanie zasobów, mapping sieci).
+  Sygnały: handshake_init >> handshake_fin; >3 próby z pominięciem backoff (D3).
+  Auto: hashcash^ na następne próby z tego połączenia.
+
+0x17 VERSION_ABUSE — YELLOW
+  Prezentowanie fałszywej/nieistniejącej wersji protokołu w celu ominięcia reguł.
+  Sygnały: VER niezgodny z zachowaniem ramek (zna nowe typy przy starym VER).
+
+--------------------------------------------------------------------------------
+B. ANONIMOWOŚĆ I ROUTING (0x20–0x2F) — najpoważniejsze, bo uderzają wszystkich
+--------------------------------------------------------------------------------
+0x21 ROUTE_LEAKAGE — RED (krytyczny)
+  Kierowanie ruchu Fenix przez proxy/bezpieczne tunele POZA siecią
+  (wyciąganie danych/deanonimizacja tras; grozi całej sieci).
+  Sygnały: nagłe równoległe strumienie do hostów spoza FNX po odebraniu pakietów
+  Fenix (korelacja zachowań, nigdy treści); odbiorca potwierdza wzorzec.
+  Auto: konsensus priorytet + globalne ostrzeżenie.
+
+0x22 ONION_SKIPPING — RED
+  Zdejmowanie/pomijanie warstw cebuli niezgodnie z rolą podległego hopa
+  (podgląd warstw, które nie są dla tego hopa).
+  Sygnały: ramki opuszczające hop w stanie protokołu niedostępnym legalnie.
+
+0x23 TIMING_PROBE — ORANGE (persist → RED)
+  Celowe badanie opóźnień węzłów do korelacji tożsamości tras.
+  Sygnały: regularne sekwencje PING o stałym okresie (zabronione), analiza szeregu
+  czasowego na wielu peerów jednocześnie.
+
+0x24 ECLIPSE_ATTEMPT — RED
+  Otoczanie ofiary samymi własnymi peerami (izolacja od prawdziwej sieci).
+  Sygnały: >2 peerów z jednego /16 u ofiary; identyczne fingerprinty zachowań.
+  Auto: rotacja peerów ofiary + rejestr podejrzanych.
+
+0x25 BOOTSTRAP_SPOOF — RED
+  Podszywanie pod seed/listy startowe (fałszywa brama do sieci).
+  Sygnały: podpis bootstrap niezgodny z fingerprintem; raporty klientów.
+  Auto: SCAM_ALERT globalny.
+
+--------------------------------------------------------------------------------
+C. TOŻSAMOŚĆ I SYBIL (0x30–0x3F)
+--------------------------------------------------------------------------------
+0x31 SYBIL_RING — RED
+  Pierścień/armia skoordynowanych tożsamości (głosy, reputacja, flood wspólny).
+  Sygnały: synchroniczne okna PoU, identyczne wzorce pakietów, wspólne witnessy.
+  Auto: masowe zerwanie attestation + konsensus.
+
+0x32 IDENTITY_THEFT — RED
+  Podszywanie pod cudzą tożsamość (nazwa zbliżona, sfałszowane UI).
+  Sygnały: username≈istniejący (levenshtein ≤2) + skargi ofiar; brak podpisu walleta.
+  Uwaga: name protection (benefit rang) z automatu zgłasza podobne nicki.
+
+0x33 PoU_FRAUD — ORANGE (persist → RED)
+  Fałszowanie własnego uptime (attestation "z tektury" bez realnej obecności).
+  Sygnały: odpowiedzi challenge poza oknem fizycznym, witness-spójność nieosiągalna.
+
+0x34 WITNESS_CARTEL — RED
+  Zmowa świadków PoU (wzajemne podszywanie attestation dla całej bandy).
+  Sygnały: zamknięte kliki ≥3 node'ów wzajemnie się podpisujących cyklicznie.
+
+--------------------------------------------------------------------------------
+D. EKONOMIA FNX (0x40–0x4F)
+--------------------------------------------------------------------------------
+0x41 STORAGE_FRAUD — ORANGE (persist → RED)
+  Deklarowane hostowanie fragmentów bez udowadniania (proof-of-storage fail).
+  Sygnały: ≥30% wyzwań storage bezpoprawnych w tygodniu.
+
+0x42 DOUBLE_SPEND_ATTEMPT — RED
+  Nadawanie konfliktowych transakcji (próba podwójnego wydania).
+  Sygnały: te same UTXO/entry w ≥2 tx w mempool; konflikt w propagacji.
+
+0x43 FEE_EVASION — YELLOW (persist → ORANGE)
+  Celowe konstruowanie tx omijających opłatę protokołu.
+  Sygnały: struktury tx z fee obniżonym poniżej płasko-przepisowego.
+
+0x44 MINING_CLAIM_THEFT — RED
+  Zgłaszanie/przepisywanie cudzych bloków lub nagród na siebie.
+  Sygnały: brak ważnego podpisu górnika w HEADER; kolizje tożsamości nagród.
+
+0x45 CHECKPOINT_FORGE — RED (krytyczny)
+  Fałszowanie podpisów progowych checkpointów (atak na serce konsensusu).
+  Auto: alarm sieci + freeze propagacji fałszywych CP; konsensus natychmiastowy.
+
+0x46 BOND_GAMING — ORANGE
+  Obracanie depozytami identity bond w celu procedura lizania kar (gaming slash).
+
+--------------------------------------------------------------------------------
+E. WZORCE KOMUNIKACYJNE I TREŚCI (0x50–0x5F) — znowu: tylko META, nigdy treść
+--------------------------------------------------------------------------------
+0x51 MSG_SPAM — ORANGE (persist → RED)
+  Masowa wysyłka (wzór meta: identyczny rozmiar payload × N odbiorców × tempo).
+  Auto: token bucket na nadawcy; nigdy skan treści.
+
+0x52 DM_BOMBARDING — ORANGE
+  Groźbowa/obsesyjna wysyłka do jednego odbiorcy po odrzuceniu/zblokowaniu.
+  Sygnały: >50 nieudanych dostarczeń/h do tego samego walleta.
+
+0x53 GROUP_STORM — YELLOW
+  Masowe zakładanie grup/zaproszeń bez udziału w nich (wzór farm-owy).
+
+0x54 DOXXING — RED
+  Publikowanie danych osobowych osób trzecich (zgłoszenia ofiar + wzorzec meta).
+  Auto: BLOB_REF fragmentów wstrzymane (rejestr hashy), czeka werdykt konsensusu.
+
+0x55 CSAM_ALERT — RED (natychmiastowy, najwyższy priorytet)
+  Fragment z hashu pasującego do rejestru ostrzeżonych (material ofensywny).
+  Mechanika: kandydat TYLKO przez hash z zewn. rejestru; nikt nie otwiera treści.
+  Auto: wstrzymanie dystrybucji natychmiast + konsensus w trybie kryzysowym.
+
+0x56 MALWARE_SEEDING — RED
+  Dystrybucja binariów z rejestru hashy niebezpiecznych (wzór, nie analiza kodu).
+
+0x57 PHISH_KIT — RED
+  Wzorce kampanii phishingowej (spójne masowe linki/meta; raporty użytkowników
+  konsensus ≥k). Treść nieotwierana; blok na poziomie ostrzeżeń SCAM_ALERT.
+
+0x58 SCAM_BAITING — ORANGE (persist → RED)
+  Wzorzec nagabywania meta na wpłaty/zaliczki ("send me X first").
+  Auto: SCAM_ALERT dołączana do profilu nadawcy (fałszywi adminów = IDENTITY_THEFT).
+
+--------------------------------------------------------------------------------
+F. SENTINEL, ADMIN I RZĄDZENIE (0x60–0x6F)
+--------------------------------------------------------------------------------
+0x61 SENTINEL_PROBING — ORANGE (persist → RED)
+  Próby komunikacji/sterowania systemem obrony (AI dostępny tylko admin — D17).
+  Sygnały: ramki typu kontrolnego bez uprawnień; sondowanie kanałów zarządzania.
+
+0x62 SENTINEL_GAMING — YELLOW (persist → RED)
+  Celowe wygrywanie z fałszywymi zgłoszeniami aby zbanować rywala/niewinnych.
+  Sygnały: zgłaszający ma >70% zgłoszeń odrzuconych konsensusem.
+
+0x63 FAKE_ADMIN — RED
+  Podszywanie pod Administrację (podpisy, kanały, "skontaktuj się z nami o klucze").
+  Auto: SCAM_ALERT natychmiastowy + konsensus.
+
+0x64 GOVERNANCE_BRIGADE — ORANGE (persist → RED)
+  Skoordynowane głosowania maszynkowe (wzorce czasowe pasujące 1:1
+  do kampanii zewnętrznych; nie oceniamy treści głosowania).
+
+0x65 ESCROW_ABUSE — ORANGE
+  Atakowanie mechaniki wykupu/unbana (spam escrow, fałszywe dowody wpłat).
+
+--------------------------------------------------------------------------------
+G. INFRASTRUKTURA I KLIENT (0x70–0x7F)
+--------------------------------------------------------------------------------
+0x71 SEED_ABUSE — RED (konsensus attestorów obowiązkowy)
+  Node seed dodatkowo łamiący zasady (logowanie, filtrowanie werdyktów, cenzura).
+  Sygnały: rozjazd attestacji vs reszta k; downtime celowy w kryzysach.
+
+0x72 UPDATE_TAMPER — RED
+  Propagowanie zmodyfikowanych pakietów aktualizacji lub rodzeństwa podpisów.
+  Auto: freeze propagacji, informacja natychmiastowa wszystkich klientów.
+
+0x73 TAMPERED_ISO — ORANGE (persist → RED)
+  Klient łamiący gwarancje protokołu (zmodyfikowany w sposób naruszający innych).
+  Rozróżnienie: buildy własne/legalne są OK — problem zaczyna się przy łamaniu
+  reguł protokołu/cekaem (np. odsłanianie warstw, pomijanie fee).
+
+0x74 HONEYPOT_PEER — RED
+  Peer systematycznie prowokujący ekshumację metadanych innych (zapis korelacji).
+  Sygnały: anomalne mapowanie topologii (PING cyclery + PEERS_REQ nad normą).
+
+--------------------------------------------------------------------------------
+ZASADY KAR (skrót — pełna drabina: fnx_spec §11, ToS §8)
+--------------------------------------------------------------------------------
+ YELLOW: throttle tier −1, cap wiadomości, obserwacja AI 7 dni — auto-reset.
+ ORANGE: read-only 14 dni (hosting/grupy pauza), mnożnik kopania −50%.
+ RED: BAN_EVT tombstone na-chain (kod + wyjaśnienie PL/EN + hash dowodów),
+      PoU/streak reset, ranga przepada, bond slash, unban tylko 1× per wallet
+      za 1 000 000 USD XMR (30 dni decyzji, 99% zwrotu przy odmowie/timeout).
+
+HISTORIA ZMIAN REJESTRU
+ v1.0 (2026-07-19): 30 kodów w 7 kategoriach. Bazowe 8 z fnx_spec §9 zachowane
+                    (mapowanie: PROTO_FLOOD=0x11, INVALIDTAG_STORM=0x12,
+                     SYBIL_RING=0x31, STORAGE_FRAUD=0x41, MSG_SPAM=0x51,
+                     CAMO_VIOLATION=0x13, ROUTE_LEAKAGE=0x21, DOXXING=0x54).
+Koniec rejestru.
+================================================================================

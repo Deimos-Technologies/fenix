@@ -1,0 +1,6 @@
+# Fenix — zależności Python (Python >= 3.10)
+# cryptography: E2E (X25519/Ed25519/AES-256-GCM), ChaCha20-Poly1305 (AEAD keystora,
+# fallback gdy brak XChaCha20), Argon2id (KEK z hasła, keystore KS1) — wymaga >= 44
+cryptography>=44.0.0
+# fpdf2: generatory dokumentacji PDF (tools/)
+fpdf2>=2.7.0

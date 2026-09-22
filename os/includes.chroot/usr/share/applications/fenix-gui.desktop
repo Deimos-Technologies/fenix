@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=FenixOS
+Comment=Okno w sieci FNX: portfel, kontakty po username, paranoia, Mullvad VPN
+Exec=/usr/local/bin/fenix-gui
+Icon=fenix
+Categories=Network;Security;
+Terminal=false

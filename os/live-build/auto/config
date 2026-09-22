@@ -1,0 +1,32 @@
+#!/bin/sh
+# os/live-build/auto/config — konfiguracja live-build Fenix OS (D8: remaster Debiana)
+# Wywolywane przez os/build_iso.sh z katalogu roboczego. Profil: FENIX_PROFILE=full|min.
+
+set -e
+
+PROFILE="${FENIX_PROFILE:-full}"
+
+lb config noauto \
+  --distribution bookworm \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --architectures amd64 \
+  --binary-images iso-hybrid \
+  --bootloader "syslinux grub-efi" \
+  --debian-installer false \
+  --memtest none \
+  --bootappend-live "boot=live components quiet lockdown=integrity apparmor=1 security=apparmor ipv6.disable=1 swapaccount=0 fenix.profile=$PROFILE" \
+  --bootappend-live-failsafe "boot=live components noapic noapm nodma nomce nolapic nosmp" \
+  --iso-application "Fenix OS" \
+  --iso-publisher "Fenix Project" \
+  --iso-volume "FENIX_OS" \
+  --firmware-chroot true \
+  --updates false \
+  --backports false \
+  --apt-recommends false \
+  "${@}"
+
+# Notatki projektowe:
+#  - iso-hybrid + syslinux/grub-efi = boot UEFI + Legacy (TODO M8, test obu w VM)
+#  - lockdown=integrity + apparmor w linii kernela (iso_plan §B3)
+#  - ipv6.disable=1 = zasada fail-closed (IPv6 albo przez camo, albo OFF — TODO M8)
+#  - secure boot: niepodpisane (D23 — instrukcja "wylacz Secure Boot" w README)

@@ -1,0 +1,8 @@
+#!/bin/bash
+# /usr/local/bin/fenix-gui — launcher GUI FenixOS (M7) na Live-ISO
+# Kod: /opt/fenix (repo na ISO) + /run/fenix-payload gdy ładunek sealed wypakowany (jak fenix-node)
+set -euo pipefail
+export PYTHONPATH="/opt/fenix${FENIX_PAYLOAD_PATH:+:$FENIX_PAYLOAD_PATH}"
+if [[ -d /run/fenix-payload ]]; then export PYTHONPATH="/run/fenix-payload:$PYTHONPATH"; fi
+cd /opt/fenix
+exec python3 -m gui.fenix_gui "$@"

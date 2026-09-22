@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fenix"
+version = "0.9.0"
+description = "Fenix / AnonNet — sieć P2P, blockchain FNX, peleryna FNX64"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "cryptography>=44.0.0",
+    "fpdf2>=2.7.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["ai", "app", "chain", "core", "core.*", "gui", "net", "transport"]
+
+[tool.setuptools.package-data]
+"core.crypto" = ["fnx64_accel.c"]
+"gui" = ["assets/badges/*.png"]
