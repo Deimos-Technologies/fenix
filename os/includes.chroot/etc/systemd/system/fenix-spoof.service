@@ -1,0 +1,17 @@
+# /etc/systemd/system/fenix-spoof.service — losowa tozsamosc sprzetowa PRZED siecia (D6)
+# Krytyczna kolejnosc: mamy sie wykonac zanim jakikolwiek interfejs pojdzie w gore.
+[Unit]
+Description=Fenix: losowa tozsamosc sprzetowa przed siecia (D6)
+DefaultDependencies=no
+After=systemd-udev-settle.service
+Before=network-pre.target
+Wants=network-pre.target
+ConditionPathExists=/usr/local/bin/fenix-spoof
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/fenix-spoof --apply
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

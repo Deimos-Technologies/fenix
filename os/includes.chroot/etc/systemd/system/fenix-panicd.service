@@ -1,0 +1,19 @@
+# /etc/systemd/system/fenix-panicd.service — demon paniki (D27): Del+PageUp 2 s
+# Musi startowac WCZESNIE i chodzic jako root (czyta /dev/input, wykonuje shred+poweroff).
+# Nie zalezy od GUI — dziala tez w trybie tekstowym/zdalnym (konsola ma evdev).
+[Unit]
+Description=Fenix OS panic daemon (Del+PageUp 2s = crypto-shred + wipe + poweroff)
+After=systemd-udev-settle.service
+# celowo BRAK zaleznosci od Fenix-node/GUI: panika musi dzialac nawet gdy wszystko padnie
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/fenix/os/fenix_panicd.py
+Restart=always
+RestartSec=2
+# demon NIE dostaje hardeningu blokujacego /dev ani /proc — z natury potrzebuje obu.
+# Za to: brak sieci wcale (niepotrzebna do paniki); AF_UNIX dla fallbacku dbus zostaje.
+PrivateNetwork=yes
+
+[Install]
+WantedBy=multi-user.target

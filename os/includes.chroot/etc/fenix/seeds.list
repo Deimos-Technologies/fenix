@@ -1,0 +1,10 @@
+# /etc/fenix/seeds.list — seed nodes Fenixa (brama do sieci zbiorczej; TODO M2/M9)
+#
+# format linii:  <ip>:<port> <ed25519_pubkey_hex> [nazwa]
+# ZASADY (TODO M9): minimum 3 seedy, rozne jurysdykcje; lista PODPISANA w ISO
+# i weryfikowana przez klienta (M2/M5). Wartosci nizej = PLACEHOLDERY DEV
+# (RFC 5737 TEST-NET-3) — zamieniamy na prawdziwe przy starcie testnetu.
+# W tym pliku NIGDY nie ma kluczy prywatnych (tylko publiczne odciski).
+203.0.113.11:45100 00 dev-seed-alpha
+203.0.113.12:45100 00 dev-seed-beta
+203.0.113.13:45100 00 dev-seed-gamma

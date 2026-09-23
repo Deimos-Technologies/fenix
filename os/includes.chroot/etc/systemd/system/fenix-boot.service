@@ -1,0 +1,25 @@
+# /etc/systemd/system/fenix-boot.service — BARIERA: kreator 1. bootu / unlock / panika
+# Mur przy bramie (D24+D27): node NIE dostaje tozsamosci, dopoki uzytkownik nie
+# otworzy kontenera. Tmpfs /run/fenix = przekaz w RAM, ginie z pradem.
+[Unit]
+Description=Fenix OS boot barrier (kreator/unlock/panika kontenera D24)
+DefaultDependencies=no
+After=local-fs.target
+Before=fenix-node.service
+# bez sieci — bariera jest OFFLINE z zalozenia
+ConditionPathExists=/opt/fenix/os/fenix_boot.py
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+ExecStart=/usr/bin/python3 /opt/fenix/os/fenix_boot.py
+# TTY dostepny na konsoli live; bez TTY (headless) node startuje z DEV-tozsamoscia
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty1
+# kod wyjscia 42 = panika: poweroff wykonuje sekwencja; 1 = bez kontenera/prob (node DEV)
+SuccessExitStatus=1 42
+
+[Install]
+WantedBy=sysinit.target

@@ -1,0 +1,31 @@
+# === FenixOS .gitignore ===
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Sekrety — NIGDY w repo (lista NIGDY!)
+secrets/
+*.key
+*.pem
+*.seed
+*.wallet
+
+# Artefakty ISO/OS (budowane lokalnie, nie wersjonowane)
+*.iso
+*.img
+*.bin
+*.squashfs
+build/
+dist/
+
+# Logi i smieci
+*.log
+.DS_Store
+Thumbs.db
+
+# Akcelerator FNX64 budowany przy imporcie (źródło: core/crypto/fnx64_accel.c)
+*.so

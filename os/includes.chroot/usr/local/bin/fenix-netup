@@ -1,0 +1,48 @@
+#!/bin/bash
+# /usr/local/bin/fenix-netup — bootstrap sieci Fenixa (ExecStartPre fenix-node.service)
+#
+# Trzy dowody zanim node ruszy:
+#   1) jest trasa domyslna (DHCP sie udalo),
+#   2) fail-closed TRZYMA: sonda DNS:53 MUSI byc dropnieta (jestesmy uid 1088 = fenix),
+#   3) seeds.list czytelny; raport osiagalnosci seedow (TCP).
+# Wyjscie != 0 → systemd NIE uruchomi noda. Fail-closed > "zeby dzialalo".
+set -euo pipefail
+
+SEEDS="${FENIX_SEEDS:-/etc/fenix/seeds.list}"
+say(){ printf '[fenix-netup] %s\n' "$*"; }
+
+# --- 1) trasa domyslna (czekamy max 20 s na DHCP) ------------------------------
+ok=0
+for _ in $(seq 1 20); do
+  ip route show default 2>/dev/null | grep -q '^default' && { ok=1; break; } || sleep 1
+done
+(( ok == 1 )) || { say "BLAD: brak trasy domyslnej (siec nieprzydzielona)"; exit 1; }
+say "trasa domyslna: OK (interfejs zyje, MAC juz sfałszowany wg fenix-spoof)"
+
+# --- 2) self-check fail-closed --------------------------------------------------
+# Sonda do 1.1.1.1:53 przez 3 s MUSI sie nie udac (nft drop dla uid 1088).
+if timeout 3 bash -c 'exec 3<>/dev/tcp/1.1.1.1/53' 2>/dev/null; then
+  say "BLAD KRYTYCZNY: DNS/tcp:53 wyszedl poza camo — fail-closed ZLAMANY, node nie startuje"
+  exit 2
+fi
+say "fail-closed: OK (sonda DNS:53 dropnieta, jak nakazuje nftables)"
+
+# --- 3) seeds.list + osiagalnosc -----------------------------------------------
+mapfile -t seeds < <(grep -vE '^\s*(#|$)' "$SEEDS" 2>/dev/null | awk '{print $1}' \
+                     | grep -E '^[0-9a-fA-F:.]+:[0-9]{2,5}$' || true)
+if (( ${#seeds[@]} == 0 )); then
+  say "UWAGA: seeds.list pusty/niepoprawny — tryb szkieletowy OFFLINE (boot_security §3.1)"
+  exit 0   # szkielet jest legalny; po prostu nie laczymy do sieci zbiorczej
+fi
+reach=0
+for s in "${seeds[@]}"; do
+  ipaddr="${s%:*}"; port="${s##*:}"
+  if timeout 4 bash -c "exec 3<>/dev/tcp/$ipaddr/$port" 2>/dev/null; then
+    say "seed $s: TCP OK"
+    reach=$((reach+1))
+  else
+    say "seed $s: niedostepny teraz (siec/seed down) — node sprobuje sam z backoff"
+  fi
+done
+say "seedy osiagalne z bootstrapu: $reach/${#seeds[@]} (do skladu klucza zbiorczego k=3 potrzeba 3 — boot_security §3)"
+exit 0

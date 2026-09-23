@@ -1,0 +1,33 @@
+#!/bin/bash
+# /usr/local/bin/fenix-vpn — start/stop tunelu Mullvad (D29 profil B) na FenixOS Live
+# OPT-IN: działa tylko gdy istnieje /run/fenix/vpn.env (RAM!) z FENIX_MULLVAD_ACCOUNT=
+# (16 cyfr — konto Mullvad kupne za gotówkę/XMR, nie email). Pisany przez GUI/wizard.
+# Kill switch (nft inet fenixwg) stawiany PRZED tunelem przez transport/mullvad.py:
+# padnie VPN → nic nie wycieknie. Bazowy nftables.conf puszcza fwmark 51820 (WG outer).
+set -euo pipefail
+ENVF=/run/fenix/vpn.env
+cmd="${1:-status}"
+export PYTHONPATH="/opt/fenix${FENIX_PAYLOAD_PATH:+:$FENIX_PAYLOAD_PATH}"
+cd /opt/fenix
+
+case "$cmd" in
+  up)
+    if [[ ! -r "$ENVF" ]]; then
+      echo "fenix-vpn: brak $ENVF — wpisz numer konta Mullvad w Ustawieniach (GUI) i zapisz."
+      exit 1
+    fi
+    set -a; source "$ENVF"; set +a
+    exec python3 -m transport.mullvad up --country "${FENIX_VPN_COUNTRY:-pl}" \
+      ${FENIX_VPN_HOST:+--hostname "$FENIX_VPN_HOST"}
+    ;;
+  down)
+    exec python3 -m transport.mullvad down
+    ;;
+  status)
+    exec python3 -m transport.mullvad status
+    ;;
+  *)
+    echo "użycie: fenix-vpn up|down|status" >&2
+    exit 2
+    ;;
+esac

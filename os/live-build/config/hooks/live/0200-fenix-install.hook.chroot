@@ -1,0 +1,50 @@
+#!/bin/bash
+# 0200-fenix-install.hook.chroot — instalacja stosu Fenixa na obrazie (M2-ready)
+# Build_iso.sh stage'uje repo do config/includes.chroot/opt/fenix-repo-stage.
+set -euo pipefail
+
+install -d -m 0755 /opt/fenix
+if [ -d /opt/fenix-repo-stage ]; then
+  cp -a /opt/fenix-repo-stage/. /opt/fenix/
+  rm -rf /opt/fenix-repo-stage
+fi
+
+# --- venv z zaleznosciami (cryptography>=44 dla Argon2id/keystore) ---
+python3 -m venv /opt/fenix/venv
+/opt/fenix/venv/bin/pip install --no-cache-dir -U pip
+/opt/fenix/venv/bin/pip install --no-cache-dir -r /opt/fenix/requirements.txt
+
+# --- launcher noda (net/fenix_node.py).
+# Kod: jawnie z /opt/fenix (plain build) LUB z /run/fenix-payload (SEALED build —
+# boot agent wypakowal ładunek do tmpfs; PYTHONPATH wskazuje na payload).
+cat > /usr/local/bin/fenix-node <<'EOS'
+#!/bin/bash
+# /usr/local/bin/fenix-node — launcher noda Fenixa (ISO)
+# Parametry: --profile A|B --seeds /etc/fenix/seeds.list [--identity-file …]
+if [ -d /run/fenix-payload/core ]; then
+  export PYTHONPATH="/run/fenix-payload${PYTHONPATH:+:$PYTHONPATH}"
+fi
+cd /opt/fenix 2>/dev/null || cd /
+exec /opt/fenix/venv/bin/python3 -m net.fenix_node "$@"
+EOS
+chmod 0755 /usr/local/bin/fenix-node
+
+# --- spoof jako binarka systemowa (nasze os/spoof.sh) ---
+ln -sf /opt/fenix/os/spoof.sh /usr/local/bin/fenix-spoof
+chmod 0755 /opt/fenix/os/spoof.sh
+
+# --- demon paniki (D27) startuje przez systemd: /usr/bin/python3 ---
+chmod 0755 /opt/fenix/os/fenix_panicd.py
+test -f /opt/fenix/os/fenix_panicd.py
+
+# --- bariera boot (D24): kreator/unlock/panika ---
+chmod 0755 /opt/fenix/os/fenix_boot.py
+test -f /opt/fenix/os/fenix_boot.py
+
+# --- prawa i wlasnosc ---
+chown -R 1088:1088 /opt/fenix
+chmod 0755 /usr/local/bin/fenix-netup
+
+# --- sanity: bez repo nie budujemy (cichy brak plikow = zly staging) ---
+test -f /opt/fenix/core/keystore.py
+echo "0200: stos Fenixa na obrazie (/opt/fenix + venv)"

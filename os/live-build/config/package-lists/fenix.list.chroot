@@ -1,0 +1,43 @@
+# os/live-build/config/package-lists/fenix.list.chroot
+# Pakiety Fenix OS (profil full; profil min odchudza hook przy budowie)
+# Zasada: minimum potrzebne do node+GUI+Wi-Fi. ZERO openssh-server, ZERO apache.
+
+# --- Python / Fenix ---
+python3
+python3-tk
+python3-pip
+python3-venv
+
+# --- Siec feniksa ---
+nftables
+iproute2
+wpasupplicant
+wireless-tools
+firmware-iwlwifi
+firmware-ath9k-htc
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+
+# --- Entropia i czas (boot bez NTP plaintext — M2: zegar przez camo) ---
+haveged
+rng-tools5
+
+# --- GUI (M7; profil min je wykina) ---
+xorg
+openbox
+fonts-dejavu
+xdg-utils
+
+# --- Narzedzia QA i higiena ---
+gnupg
+tcpdump
+secure-delete
+pciutils
+usbutils
+rfkill
+nano
+less
+ca-certificates
+
+# NIE MA: openssh-server, samba, avahi, cups, ModemManager (maskowany w hookie 0100)

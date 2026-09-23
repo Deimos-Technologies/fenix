@@ -1,0 +1,27 @@
+# /etc/systemd/system/fenix-node.service — serce: ISO staje sie wezlem sieci zbiorczej
+# Kolejnosc: najpierw spoof (D6) i firewall fail-closed, DOPIERO potem laczymy do seedow.
+[Unit]
+Description=Fenix OS node (laczy z siecia zbiorcza FNX przez camo)
+After=network-online.target nftables.service fenix-spoof.service fenix-boot.service
+Wants=network-online.target
+Requires=nftables.service
+
+[Service]
+Type=simple
+User=fenix
+Group=fenix
+# minimalne utwardzenie uslugi (AppArmor profil pelny = M8 z live-build hook)
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/home/fenix /run/fenix
+# bootstrap self-check: jesli fail-closed NIE trzyma, node NIE startuje (exit != 0)
+ExecStartPre=/usr/local/bin/fenix-netup
+# node: M2 (net/fenix_node.py); --profile A = szum obfs4-style (M3, D10)
+# tozsamosc: z bariery boot (identity.json na tmpfs), gdy jej brak — DEV ephemeral
+ExecStart=/usr/local/bin/fenix-node --profile A --seeds /etc/fenix/seeds.list --identity-file /run/fenix/identity.json
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

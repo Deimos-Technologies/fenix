@@ -1,0 +1,88 @@
+{
+  "folders": [
+    { "path": "." },
+    { "path": "core",  "name": "🔒 core — tożsamość i sejf" },
+    { "path": "net",   "name": "🌐 net — własna sieć P2P" },
+    { "path": "chain", "name": "💰 chain — coin FNX" },
+    { "path": "transport", "name": "🥷 transport — kamuflaż" },
+    { "path": "os",    "name": "💿 os — bootowalne ISO" },
+    { "path": "docs",  "name": "📚 docs — specy i decyzje" },
+    { "path": "tools", "name": "🛠️ tools" },
+    { "path": "app",   "name": "💬 app — komunikator (M4)" },
+    { "path": "gui",   "name": "🖥️ gui (M7)" },
+    { "path": "boot/", "name": "🔧 boot (ASM, edu)" }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "python.analysis.extraPaths": [".", "core", "net", "transport", "chain", "os"],
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/.git": true,
+      "**/.mypy_cache": true,
+      "**/dist": true,
+      "**/build": true
+    },
+    "python.testing.pytestEnabled": false,
+    "files.encoding": "utf8",
+    "files.eol": "\n",
+    "editor.rulers": [100],
+    "[python]": { "editor.tabSize": 4, "editor.insertSpaces": true }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "tamasfe.even-better-toml",
+      "timonwong.shellcheck",
+      "mads-hartmann.bash-ide-vscode",
+      "yzhang.markdown-all-in-one"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Fenix: selftest mesh (3 node'y)",
+        "type": "shell",
+        "command": "python3 -m net.fenix_node",
+        "group": "test",
+        "presentation": { "reveal": "always" }
+      },
+      {
+        "label": "Fenix: selftest bariera boot",
+        "type": "shell",
+        "command": "python3 os/fenix_boot.py",
+        "group": "test",
+        "presentation": { "reveal": "always" }
+      },
+      {
+        "label": "Fenix: selftest panika (dry)",
+        "type": "shell",
+        "command": "python3 os/fenix_panicd.py",
+        "group": "test",
+        "presentation": { "reveal": "always" }
+      },
+      {
+        "label": "Fenix: selftest sealed payload",
+        "type": "shell",
+        "command": "python3 os/fenix_payload.py",
+        "group": "test",
+        "presentation": { "reveal": "always" }
+      },
+      {
+        "label": "Fenix: build_iso selftest (paczka ISO)",
+        "type": "shell",
+        "command": "bash os/build_iso.sh --selftest",
+        "group": "test",
+        "presentation": { "reveal": "always" }
+      },
+      {
+        "label": "Fenix: self-attack na keystore (32 scenariusze)",
+        "type": "shell",
+        "command": "python3 tools/self_attack.py",
+        "group": "test",
+        "presentation": { "reveal": "always" }
+      }
+    ]
+  }
+}
